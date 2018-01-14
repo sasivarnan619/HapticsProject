@@ -3,9 +3,12 @@ from collections import deque
 import numpy as np
 import argparse
 import imutils
+import serial
 import cv2
+import struct
 from scipy.spatial import distance
 # construct the argument parse and parse the arguments
+ser = serial.Serial('COM3', 9600) # Establish the connection on a specific port
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video",
         help="path to the (optional) video file")
@@ -31,7 +34,7 @@ else:
 count = 0
 frame_count = 0
 # keep looping
-label = [["A", (0, 0),0,0], ["B", (0, 0),0,0], ["C", (0, 0),0,0]]
+label = [["A", (0, 0),0,0], ["B", (0, 0),0,0], ["C", (0, 0),0,0], ["D", (0, 0),0,0]]
 while True:
         # grab the current frame
         (grabbed, frame) = camera.read()
@@ -40,7 +43,8 @@ while True:
         # then we have reached the end of the video
         if args.get("video") and not grabbed:
                 break
-
+        ser.write(struct.pack('>B', frame_count%15))
+        print ser.readline()
         if frame_count < 1:
             frame_count = 1 + frame_count
             continue
@@ -64,7 +68,8 @@ while True:
                 cv2.CHAIN_APPROX_SIMPLE)[-2]
         cntsl = cv2.findContours(maskl.copy(), cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)[-2]
-        print len(cntsl)
+        #print len(cntsl)+len(cntsh)
+       # print len(cntsh)
         center = None
         centerh = None
         centerl = None
@@ -104,7 +109,7 @@ while True:
                                                 label[i][3] = label[i][3] + 1
                        
         if frame_count % 15 == 0:
-                print label
+                #print label
                 for i in range(len(label)):
                         if label[i][2] >= 3 and label[i][2] <= 7:
                                 label[i][0] = "B"
@@ -112,8 +117,8 @@ while True:
                                 label[i][0] = "A"
                         elif label[i][2] >= 8 and label[i][2] <= 12:
                                 label[i][0] = "C"
-                        #elif label[i][2] > 13:
-                                #label[i][0] = "D"
+                        elif label[i][2] > 13:
+                                label[i][0] = "D"
         frame_count = frame_count + 1
                 #print str(count) +"at"+ str(frame_count)
        
